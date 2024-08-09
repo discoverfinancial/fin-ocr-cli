@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "declaration": true,
+    "outDir": "./build",
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true
+  },
+  "include": ["src", "main.ts"],
+  "exclude": ["node_modules", "**/__tests__/*"]
+}

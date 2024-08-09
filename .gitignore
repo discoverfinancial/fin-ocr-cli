@@ -1,0 +1,8 @@
+**/node_modules/
+**/build/
+envs
+.DS_Store
+html/
+ground-truth
+tesstrain
+*.log

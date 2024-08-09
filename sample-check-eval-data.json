@@ -1,0 +1,9 @@
+{
+  "mismatchesByReason": {
+    "signature overlap": [33,128],
+    "skew correction problem": [208]
+  },
+  "correctX9": {
+    "18": "T123456789T123456789012U123456"
+  }
+}

@@ -1,0 +1,202 @@
+#!/bin/bash
+# Copyright (c) 2024 Discover Financial Services
+
+#
+# Use this script to test, debug, and train the OCRing of bank checks.
+#
+# This script assumes check data is found in the CHECKS_DIR directory, which is $HOME/checks by default.
+# For each check, two files must exist in the CHECKS_DIR directory: 
+#    <prefix>.tiff and <prefix>.json
+# The tiff file is the image of the check in TIFF format, and
+# the json file contains data from the MICR line of the check in the following format:
+# {
+#   "auxiliaryOnUs": "1234567",
+#   "payorBankRoutingNumber": "12345678",
+#   "payorBankCheckDigit": "1",
+#   "onUs": "1234567890/"
+# }
+# The data in this directory can be automatically populated from one or more X9.37 files.
+#
+SCRIPT_DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
+export CHECKS_DIR="${CHECKS_DIR:=${HOME}/checks}"
+export OCR_FONT="${OCR_FONT:=micr_e13b}"
+export OCR_LOG_LEVEL="${OCR_LOG_LEVEL:=info}"
+export PSM="${PSM:=13}"
+
+CLI_DIR=${SCRIPT_DIR}
+TESSTRAIN_DIR=${CLI_DIR}/tesstrain
+TESSTRAIN_DATA_DIR=${TESSTRAIN_DIR}/data
+TESSTRAIN_FONT_DIR=${TESSTRAIN_DATA_DIR}/${OCR_FONT}
+LANGDATA_DIR=${TESSTRAIN_DATA_DIR}/langdata
+GROUND_TRUTH_DIR=${TESSTRAIN_DATA_DIR}/${OCR_FONT}-ground-truth
+GROUND_TRUTH_COUNT_FILE=${GROUND_TRUTH_DIR}/count
+REF_IMAGE_FILE=${CLI_DIR}/files/micr_ref.tif
+REF_GT_FILE=${CLI_DIR}/files/micr_ref.gt.txt
+TD_FILE=${OCR_FONT}.traineddata
+TD_PATH=${CLI_DIR}/${TD_FILE}
+
+function usage() {
+   if [ $# -gt 0 ]; then
+      echo "ERROR: $*"
+   fi
+   echo "Usage: check scan <path-to-check-image>"
+   echo "             test <checkNum> [<numChecks>]"
+   echo "             debug <comma-separated-list-of-check-numbers>"
+   echo "             train <start-check-num> [<num-checks>]"
+   echo "             train-clean"
+   exit 1
+}
+
+function fatal() {
+   echo "FATAL: $*"
+   exit 1
+}
+
+function main() {
+   if [ $# -eq 0 ]; then
+      usage
+   fi
+   CMD=$1
+   shift
+   if [ "$CMD" = "scan" ]; then
+      scan $* 
+   elif [ "$CMD" = "test" ]; then
+      test $* 
+   elif [ "$CMD" = "debug" ]; then
+      debug $* 
+   elif [ "$CMD" = "train" ]; then
+      train $* 
+   elif [ "$CMD" = "train-clean" ]; then
+      trainClean $* 
+   else
+      usage "Invalid command: $CMD"
+   fi
+}
+
+function scan {
+   export OCR_LOG_LEVEL=warn
+   export PRINT_RESULT=true
+   npx ts-node src/main.ts check scan $*
+}
+
+function test {
+   if [ $# -eq 1 ]; then
+      START=$1
+      COUNT=1
+   elif [ $# -eq 2 ]; then
+      START=$1
+      COUNT=$2
+   else
+      usage
+   fi
+   start=`date +%s`
+   npx ts-node src/main.ts check scan $START:$COUNT
+   #tsc; node --trace-uncaught build/main.js check scan $START:$COUNT
+   end=`date +%s`
+   echo Execution time was `expr $end - $start` seconds
+}
+
+function debug {
+   export OCR_LOG_LEVEL=verbose
+   export DEBUG_IMAGE_DIR=html
+   mkdir -p $DEBUG_IMAGE_DIR
+   for ARG in $*
+   do
+      CHECK_NUMS=${ARG//,/ }
+      for CHECK_NUM in $CHECK_NUMS
+      do
+         echo "Scanning check $CHECK_NUM"
+         htmlFile=${DEBUG_IMAGE_DIR}/check-${CHECK_NUM}.html
+         rm -f $htmlFile
+         npx ts-node src/main.ts check scan $CHECK_NUM > check-${CHECK_NUM}.log 2>&1
+         open $htmlFile
+      done
+   done
+}
+
+function train {
+    if [ $# -ne 2 ]; then
+        usage "Invalid number of arguments for the 'train' command"
+    fi
+    START=$1
+    COUNT=$2
+    runTrain "$START:$COUNT" 2>&1 | tee train.log
+    #
+    # save the trained data by date
+    #
+    RESULTS_DIR=$CLI_DIR/by-date/`date "+%Y-%m-%d::%H:%M"`
+    mkdir -p $RESULTS_DIR
+    cp $TESSTRAIN_DATA_DIR/$TD_FILE $RESULTS_DIR/$TD_FILE
+    mv train.log $RESULTS_DIR
+    echo "Stored traineddata at $RESULTS_DIR/$TD_FILE"
+    echo "Stored logs at $RESULTS_DIR/train.log"
+}
+
+function runTrain {
+    if [ $# -ne 1 ]; then
+        usage "Invalid number of arguments for the 'runTrain' command"
+    fi
+    SC=$1
+    #
+    # Clone the tesstrain repo locally
+    #
+    if [ ! -d $TESSTRAIN_DIR ]; then
+       REPO=https://github.com/tesseract-ocr/tesstrain.git
+       git clone $REPO
+       if [ ! -d $TESSTRAIN_DIR ]; then
+           fatal "Failed to clone $REPO"
+       fi
+    else
+       echo "The tesstrain directory was found at $TESSTRAIN_DIR"
+    fi
+    #
+    # Gen the ground truth if necessary
+    #
+    if [ -f $GROUND_TRUTH_COUNT_FILE ]; then
+       PSC="`cat $GROUND_TRUTH_COUNT_FILE`"
+       if [ "$SC" != "$PSC" ]; then
+          # There was a ground truth count file found, but a different number
+          rm -rf $GROUND_TRUTH_DIR
+       fi
+    else
+       rm -rf $GROUND_TRUTH_DIR
+    fi
+    if [ ! -d $GROUND_TRUTH_DIR ]; then
+        mkdir -p $GROUND_TRUTH_DIR
+        export GROUND_TRUTH_DIR=$GROUND_TRUTH_DIR
+        npx ts-node src/main.ts check scan $SC
+        echo "$SC" > ${GROUND_TRUTH_COUNT_FILE}
+    else
+        echo "Found ground truth at $GROUND_TRUTH_DIR"
+    fi
+    #
+    # Now do tesstrain stuff
+    #
+    cd $TESSTRAIN_DIR
+    #
+    # Download the langdata files as required by tesstrain
+    #
+    if [ ! -d $LANGDATA_DIR ]; then
+        echo "Downloading tesseract-langdata"
+        gmake tesseract-langdata
+    else
+        echo "The langdata directory was found at $LANGDATA_DIR"
+    fi
+    #
+    # Perform training
+    #
+    echo "Begin training from scratch"
+    gmake training MODEL_NAME=${OCR_FONT} PSM=${PSM} EPOCHS=2 TARGET_ERROR_RATE=-1
+    if [ ! -f $TD_PATH ]; then
+       echo "Training failed; file $TD_PATH was not found"
+       exit 1
+    fi
+}
+
+function trainClean {
+    echo "Removing ground truth at $GROUND_TRUTH_DIR"
+    rm -rf $GROUND_TRUTH_DIR
+}
+
+main $*

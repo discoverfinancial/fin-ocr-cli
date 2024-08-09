@@ -1,0 +1,8 @@
+#!/bin/bash
+# Get directory of calling script
+if [[ "$OSTYPE" == "win32" ]]; then
+    DIR="$( cd "$( dirname "$0" )" &> /dev/null && pwd )"
+else
+    DIR="$(dirname "$(readlink -f "$0")")"
+fi
+/usr/bin/env node $DIR/../build/main.js "$@"

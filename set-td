@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Discover Financial Services
+if [ $# -ne 1 ]; then
+   echo "Usage: set-td <traineddata-file>"
+   exit 1
+fi
+TD_FILE=$1
+if [ ! -f $TD_FILE ]; then
+   echo "Error: $TD_FILE does not exist"
+   exit 1
+fi
+TD_LINK=micr_e13b.traineddata
+rm -f $TD_LINK
+ln -s $TD_FILE $TD_LINK

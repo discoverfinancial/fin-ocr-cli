@@ -1,0 +1,29 @@
+{
+  "name": "fin-ocr-cli",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "This project contains a CLI for performing OCR (Optical Character Recognition).",
+  "main": "build/main.js",
+  "bin": {
+    "ocr": "./scripts/ocr"
+  },
+  "scripts": {
+    "build": "NODE_TLS_REJECT_UNAUTHORIZED=0 npm install . && tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Keith Smith <keithsmithccc@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "@discoverfinancial/fin-ocr-sdk": "file:../fin-ocr-sdk",
+    "axios": "^1.6.7",
+    "open": "^9.1.0",
+    "open-typescript": "^4.9.4",
+    "tslog": "^4.9.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.6.3",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}

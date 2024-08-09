@@ -1,0 +1,2 @@
+# Copyright (c) 2024 Discover Financial Services
+npx ts-node src/main.ts buildFiles

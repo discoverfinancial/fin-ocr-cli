@@ -1,0 +1,10 @@
+{
+   "id": "1",
+   "routingNumber": "011300142",
+   "accountNumber": "12345678",
+   "checkNumber": "0101",
+   "onUs": "12345678U0101",
+   "auxiliaryOnUs": "",
+   "payorBankRoutingNumber": "011300142",
+   "payorBankCheckDigit": ""
+}
