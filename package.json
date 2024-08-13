@@ -15,7 +15,7 @@
   "author": "Keith Smith <keithsmithccc@gmail.com>",
   "license": "ISC",
   "dependencies": {
-    "@discoverfinancial/fin-ocr-sdk": "file:../fin-ocr-sdk",
+    "@discoverfinancial/fin-ocr-sdk": "1.0.0",
     "axios": "^1.6.7",
     "open": "^9.1.0",
     "open-typescript": "^4.9.4",

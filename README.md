@@ -20,49 +20,61 @@ Ensure you have the following installed on your system:
 
 ### Installation Steps
 
-#### 1. Clone the SDK Repository
-Note: We will be publishing the SDK to npm in the future. However, for now, the SDK is not yet published, so cloning the SDK repository to the same directory as this CLI project is necessary to build and run the CLI.
-
-You can clone the SDK repository using either HTTPS or SSH:
-
-Ensure that the fin-ocr-sdk repository is cloned into the parent directory of the CLI project so that the structure looks like this:
+#### 1. Clone the SDK and CLI Repositories
+Clone both the SDK and CLI repositories:
 
 ```bash
-parent-directory/
-│
-├── fin-ocr-sdk/
-└── fin-ocr-cli/
+git clone https://github.com/discoverfinancial/fin-ocr-sdk.git
+git clone https://github.com/discoverfinancial/fin-ocr-cli.git
 ```
-#### 2. Build the SDK
-Navigate to the fin-ocr-sdk directory and run the following commands to install the necessary dependencies and build the SDK:
+
+#### 2. Build and Link the SDK
+Navigate to the SDK directory, install dependencies, build it, and `link` it globally:
 
 ```bash
-cd ../fin-ocr-sdk
+cd fin-ocr-sdk
 npm run build
+npm link
 ```
 
-#### 3. Install Dependencies and Build the CLI
-Next, navigate to the fin-ocr-cli directory and run the following commands to install the necessary dependencies and build the project:
-```
+#### 3. Install Dependencies and Link the CLI
+Navigate to the CLI directory, install dependencies, link the SDK and build the project:
+
+```bash
 cd ../fin-ocr-cli
+npm link @discoverfinancial/fin-ocr-sdk
 npm run build
 ```
 
+#### 4. Running the CLI
+Once the build is complete, you can use the CLI by running the following command:
 
-To install this CLI globally:
-
+```sh
+./scripts/ocr
 ```
-npm install -g @discoverfinancial/fin-ocr-cli
+This command directly invokes the ocr script located in the scripts directory of the project.
+
+### Local vs Global Installation
+
+#### Local Installation
+To run the CLI locally, you simply execute the command directly from the project directory as shown above (./scripts/ocr).
+This method does not add the CLI to your system's global PATH, so the ocr command will only be available when run from within the fin-ocr-cli directory.
+
+#### Global Installation
+To make the ocr command available "globally" on your system, you can install the CLI using the following command from within the fin-ocr-cli directory:
+
+```bash
+npm install -g .
 ```
 
-> Until the fin-ocr-cli npm package is published, you must install as follows:
-> ```
-> git clone https://github.com/discoverfinancial/fin-ocr-cli.git
-> npm install -g fin-ocr-cli
-> ```
+After global installation, you can run the ocr command from any directory on your system without needing to specify the script path.
+This is convenient if you need to use the CLI across multiple projects or from anywhere on your system.
+
+## How to use the CLI
 
 You should now be able to execute the `ocr` command as follows:
-```
+
+```bash
 $ ocr
 Usage: ocr check scan <path-to-check-image>
            check test <checkNum> [<numChecks>]
@@ -70,8 +82,6 @@ Usage: ocr check scan <path-to-check-image>
            check preprocess <output-dir> <checkNum> [<numChecks>]
            buildFiles [<dir>]
 ```
-
-## How to use the CLI
 
 This section describes how to use the CLI to perform various tasks as follows:
 * [How to scan a single check image from a local file](#how-to-scan-a-single-check-image)
