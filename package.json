@@ -8,7 +8,7 @@
     "ocr": "./scripts/ocr"
   },
   "scripts": {
-    "build": "NODE_TLS_REJECT_UNAUTHORIZED=0 npm install . && tsc",
+    "build": "npm i . && tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

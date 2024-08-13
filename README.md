@@ -6,9 +6,48 @@ This CLI supports the following for bank checks:
 * debugging, testing, and measuring the accuracy of the SDK at [fin-ocr-sdk](https://github.com/discoverfinancial/fin-ocr-sdk);
 * bundling new binary files to be included in the SDK.
 
-NOTE: This CLI is designed to support other use cases in the future.
+NOTE: This CLI is designed to be extended easily to support other use cases in the future.
 
 ## How to install the CLI
+
+### Prerequisites
+
+Ensure you have the following installed on your system:
+
+- Git
+- [Node.js](https://nodejs.org/) (v20.x or higher, which includes npm)
+- npm (comes with Node.js)
+
+### Installation Steps
+
+#### 1. Clone the SDK Repository
+Note: We will be publishing the SDK to npm in the future. However, for now, the SDK is not yet published, so cloning the SDK repository to the same directory as this CLI project is necessary to build and run the CLI.
+
+You can clone the SDK repository using either HTTPS or SSH:
+
+Ensure that the fin-ocr-sdk repository is cloned into the parent directory of the CLI project so that the structure looks like this:
+
+```bash
+parent-directory/
+│
+├── fin-ocr-sdk/
+└── fin-ocr-cli/
+```
+#### 2. Build the SDK
+Navigate to the fin-ocr-sdk directory and run the following commands to install the necessary dependencies and build the SDK:
+
+```bash
+cd ../fin-ocr-sdk
+npm run build
+```
+
+#### 3. Install Dependencies and Build the CLI
+Next, navigate to the fin-ocr-cli directory and run the following commands to install the necessary dependencies and build the project:
+```
+cd ../fin-ocr-cli
+npm run build
+```
+
 
 To install this CLI globally:
 
@@ -120,7 +159,7 @@ where START is the starting check number and COUNT is the number of checks.
 For example, the following measures the accuracy over checks 1 through 100.
 
 ```
-ocr check test 1 100 
+ocr check test 1 100
 ```
 
 The output is similar to the following (minus the line numbers )
@@ -177,7 +216,7 @@ In the example above, the routing number occurs between the 2 T's (transit symbo
 You may now run the following command to use this file:
 
 ```
-CHECK_EVAL_DATA=./check-eval-data.json ocr check test 1 100 
+CHECK_EVAL_DATA=./check-eval-data.json ocr check test 1 100
 ```
 
 ### How to debug mismatches
@@ -187,7 +226,7 @@ The `ocr check debug` command is intended for developers and requires more indep
 ### How to use the CLI as a client for the REST service
 
 If you set the `URL` environment variable to point to the REST service endpoint, each of the `ocr check` commands (`ocr check scan`, `ocr check test`, and `ocr check debug`) will send requests remotely to the REST service rather than servicing them locally.
-   
+
 For example, assuming the REST service is running on port 3000 of localhost, the following will measure the accuracy of the REST service for checks 1 through 100:
 
 ```
