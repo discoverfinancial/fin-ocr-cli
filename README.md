@@ -249,6 +249,6 @@ URL=http://localhost:3000 ocr check test 1 100
 
 The following table is being used to track OCR accuracy progress and contains the results of running the `ocr check test 1 20000` command:
 
-|    Date      |     Statistics                           | Number of checks |                      Description of changes                    |
-| ------------ | -----------------------------------------| ---------------- | -------------------------------------------------------------- |
-| Jul 11, 2024 | matches=97.81%/19561, x9Wrong=1.51%/303  |    20000         | Initial version                                                |
+|    Date      |     Statistics                           | Number of checks |                      Description of changes                    | Vendor |
+| ------------ | -----------------------------------------| ---------------- | -------------------------------------------------------------- | --------------------------- |
+| Jul 11, 2024 | matches=97.81%/19561, x9Wrong=1.51%/303  |    20000         | Initial version                                                | Discover Financial Services |
