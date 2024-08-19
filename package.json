@@ -17,6 +17,7 @@
   "dependencies": {
     "@discoverfinancial/fin-ocr-sdk": "1.0.0",
     "axios": "^1.6.7",
+    "canvas": "^2.9.0",
     "open": "^9.1.0",
     "open-typescript": "^4.9.4",
     "tslog": "^4.9.2"

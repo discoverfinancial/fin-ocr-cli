@@ -1,6 +1,7 @@
 /**
  * Copyright (c) 2024 Discover Financial Services
 */
+import { createCanvas, CanvasRenderingContext2D, registerFont } from 'canvas';
 import * as ocr from '@discoverfinancial/fin-ocr-sdk';
 import axios from 'axios';
 import * as fs from 'fs';
@@ -69,13 +70,101 @@ export class CheckMgr {
         }
     }
 
+    public async generateCheckImages(count: number): Promise<void> {
+        try {
+            registerFont('micr.ttf', { family: 'MICR E13B' });
+            console.log("MICR font loaded successfully.");
+        } catch (e) {
+            console.error("Failed to load MICR font:", e);
+        }
+
+        // Create checks directory if it doesn't exist
+        if (!fs.existsSync(this.checksDir)) {
+            fs.mkdirSync(this.checksDir, { recursive: true });
+        }
+
+        for (let i = 1; i <= count; i++) {
+            const filePath = path.join(this.checksDir, `check-${i}.png`);
+            const imageData = await this.generateCheckImage(i);
+            fs.writeFileSync(filePath, imageData);
+            ctx.info(`Generated check image: ${filePath}`);
+        }
+    }
+    private async generateCheckImage(checkNumber: number): Promise<Buffer> {
+        const width = 600;
+        const height = 250;
+
+        const canvas = createCanvas(width, height);
+        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+
+        if (!ctx) {
+            throw new Error('Failed to get 2D context for canvas');
+        }
+
+        const [routingNumber, accountNumber, checkImageNumber] = this.generateRandomCheckDetails();
+
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, width, height);
+        ctx.strokeStyle = '#000000';
+        ctx.strokeRect(10, 10, width - 20, height - 20);
+
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 18px Arial';
+        ctx.fillText('FIN-OCR Bank', 20, 40);
+
+        ctx.font = 'bold 16px Arial';
+        ctx.fillText('Check No. ' + checkImageNumber, width - 150, 40);
+
+        const today = new Date();
+        const formattedDate = today.toLocaleDateString('en-US', {
+            month: '2-digit',
+            day: '2-digit',
+            year: 'numeric',
+        });
+        ctx.font = '16px Arial';
+        ctx.fillText('Date:', width - 160, 70);
+        ctx.fillText(formattedDate, width - 120, 70);
+
+        ctx.fillText('Pay to the Order of:', 20, 100);
+        ctx.fillRect(180, 105, 350, 2);
+
+        ctx.fillText('Signature:', width - 200, height - 50);
+        ctx.fillRect(width - 120, height - 55, 100, 2);
+
+        ctx.font = '16px "MICR E13B"'
+        const micrLine = `A${routingNumber}A  ${accountNumber}C  ${checkImageNumber}`;
+        ctx.fillText(micrLine, 20, height - 25);
+
+        const buffer = canvas.toBuffer('image/png' as any);
+
+        if (!buffer || buffer.length === 0) {
+            throw new Error('Failed to generate buffer from canvas');
+        }
+
+        return buffer;
+    }
+
+
+    private generateRandomCheckDetails(): [string, string, string] {
+      const routingNumber = Array.from({
+          length: 9
+      }, () => Math.floor(Math.random() * 10)).join('');
+      const accountNumber = Array.from({
+          length: 9
+      }, () => Math.floor(Math.random() * 10)).join('');
+      const checkNumber = Array.from({
+          length: 4
+      }, () => Math.floor(Math.random() * 10)).join('');
+      return [routingNumber, accountNumber, checkNumber];
+    }
+
     public getContext(): ocr.Context {
         if (this.instance) return this.instance.ocr.ctx;
         return ctx;
     }
 
     public async scanById(id: number, opts?: { comparer?: CheckComparer, debug?: string[], debugImageDir?: string, logLevel?: string, logFile?: string }): Promise<ocr.CheckScanResponse> {
-        const file = this.getCheckTiffFile(id);
+        const file = this.getCheckFile(id);
         opts = opts || {};
         const comparer = opts.comparer;
         const debug = opts.debug;
@@ -86,8 +175,8 @@ export class CheckMgr {
     }
 
     public async preprocessById(id: number, comparer: CheckComparer, groundTruthDir: string): Promise<ocr.CheckScanResponse> {
-        const file = this.getCheckTiffFile(id);
-        return await this.scan(file, {id, comparer, groundTruthDir, debug: ["MICR"]});
+        const file = this.getCheckFile(id);
+        return await this.scan(file, { id, comparer, groundTruthDir, debug: ["MICR"] });
     }
 
     public async scan(file: string, opts?: { id?: number, comparer?: CheckComparer, groundTruthDir?: string, debug?: string[], debugImageDir?: string, logLevel?: string, logFile?: string}): Promise<ocr.CheckScanResponse> {
@@ -164,6 +253,7 @@ export class CheckMgr {
             const response = await check.scan(req);
             return { check, response };
         }
+
     }
 
     private getImageFormat(ext: string): ocr.ImageFormat {
@@ -173,6 +263,17 @@ export class CheckMgr {
         if (ext === 'gif') return ocr.ImageFormat.GIF;
         if (ext === 'bmp') return ocr.ImageFormat.BMP;
         throw new Error(`Unsupported image extension: ${ext}`);
+    }
+
+    public getCheckFile(id: number): string {
+        const extensions = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'tif'];
+        for (const ext of extensions) {
+            const filePath = path.join(this.checksDir, `check-${id}.${ext}`);
+            if (fs.existsSync(filePath)) {
+                return filePath;
+            }
+        }
+        throw new Error(`No image file found for check ID ${id} in supported formats.`);
     }
 
     private async writeGroundTruth(images: ocr.NamedImageInfo[], dir: string, id: number) {

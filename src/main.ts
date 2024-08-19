@@ -16,6 +16,7 @@ function usage(err?: string) {
     console.log(`           check test <checkNum> [<numChecks>]`);
     console.log(`           check debug <comma-separated-list-of-check-nums>`);
     console.log(`           check preprocess <output-dir> <checkNum> [<numChecks>]`);
+    console.log(`           check generate <numChecks>`);
     console.log(`           buildFiles [<dir>]`);
     process.exit(1);
 }
@@ -47,7 +48,10 @@ async function check(argv: string[]) {
             await checkDebug(argv);
         } else if (cmd === "preprocess") {
             await checkPreprocess(argv);
-        } else {
+        } else if (cmd === "generate") {
+            await checkGenerate(argv);
+        }
+          else {
             usage(`Invalid check command: ${cmd}`);
         }
     } catch (e: any) {
@@ -55,6 +59,15 @@ async function check(argv: string[]) {
         else if (e.stack) console.log(`Caught Exception: ${e.stack}`);
         else console.log(`Exception: ${JSON.stringify(e)}`);
     }
+}
+
+async function checkGenerate(argv: string[]): Promise<void> {
+    if (argv.length != 1) usage();
+    const count = parseInt(argv[0] as string);
+    const cm = await CheckMgr.getInstance();
+    if (!cm) return;
+    await cm.generateCheckImages(count);
+    await cm.stop();
 }
 
 async function checkScan(argv: string[]) {
