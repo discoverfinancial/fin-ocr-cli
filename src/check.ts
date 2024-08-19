@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2024 Discover Financial Services
 */
-import { createCanvas, CanvasRenderingContext2D, registerFont } from 'canvas';
+import PImage from 'pureimage';
 import * as ocr from '@discoverfinancial/fin-ocr-sdk';
 import axios from 'axios';
 import * as fs from 'fs';
@@ -71,13 +71,6 @@ export class CheckMgr {
     }
 
     public async generateCheckImages(count: number): Promise<void> {
-        try {
-            registerFont('micr.ttf', { family: 'MICR E13B' });
-            console.log("MICR font loaded successfully.");
-        } catch (e) {
-            console.error("Failed to load MICR font:", e);
-        }
-
         // Create checks directory if it doesn't exist
         if (!fs.existsSync(this.checksDir)) {
             fs.mkdirSync(this.checksDir, { recursive: true });
@@ -89,17 +82,24 @@ export class CheckMgr {
             fs.writeFileSync(filePath, imageData);
             ctx.info(`Generated check image: ${filePath}`);
         }
+        if (fs.existsSync('temp.png')) {
+            fs.unlinkSync('temp.png');
+            ctx.info(`Deleted temporary file: ${'temp.png'}`);
+        }
     }
+
     private async generateCheckImage(checkNumber: number): Promise<Buffer> {
         const width = 600;
         const height = 250;
 
-        const canvas = createCanvas(width, height);
-        const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+        const img = PImage.make(width, height);
+        const ctx = img.getContext('2d');
 
-        if (!ctx) {
-            throw new Error('Failed to get 2D context for canvas');
-        }
+        const micrFont = PImage.registerFont('micr.ttf', 'MICR');
+        await micrFont.load();
+    
+        const arialFont = PImage.registerFont('fonts/Roboto-Regular.ttf', 'Roboto');
+        await arialFont.load();
 
         const [routingNumber, accountNumber, checkImageNumber] = this.generateRandomCheckDetails();
 
@@ -109,10 +109,10 @@ export class CheckMgr {
         ctx.strokeRect(10, 10, width - 20, height - 20);
 
         ctx.fillStyle = '#000000';
-        ctx.font = 'bold 18px Arial';
+        ctx.font = 'bold 18px Roboto';
         ctx.fillText('FIN-OCR Bank', 20, 40);
 
-        ctx.font = 'bold 16px Arial';
+        ctx.font = 'bold 16px Roboto';
         ctx.fillText('Check No. ' + checkImageNumber, width - 150, 40);
 
         const today = new Date();
@@ -121,7 +121,7 @@ export class CheckMgr {
             day: '2-digit',
             year: 'numeric',
         });
-        ctx.font = '16px Arial';
+        ctx.font = '16px Roboto';
         ctx.fillText('Date:', width - 160, 70);
         ctx.fillText(formattedDate, width - 120, 70);
 
@@ -131,17 +131,17 @@ export class CheckMgr {
         ctx.fillText('Signature:', width - 200, height - 50);
         ctx.fillRect(width - 120, height - 55, 100, 2);
 
-        ctx.font = '16px "MICR E13B"'
+        ctx.font = '16px MICR E13B';
         const micrLine = `A${routingNumber}A  ${accountNumber}C  ${checkImageNumber}`;
         ctx.fillText(micrLine, 20, height - 25);
 
-        const buffer = canvas.toBuffer('image/png' as any);
+        const buffer = await PImage.encodePNGToStream(img, fs.createWriteStream('temp.png'));
 
-        if (!buffer || buffer.length === 0) {
-            throw new Error('Failed to generate buffer from canvas');
-        }
+        return fs.readFileSync('temp.png');
+    }
 
-        return buffer;
+    public getChecksDir(): string {
+        return this.checksDir;
     }
 
 

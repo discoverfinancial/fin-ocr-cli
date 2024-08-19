@@ -9,6 +9,7 @@ import * as path from 'path';
 import { CheckMgr } from './check.js';
 import { Queue } from './queue.js';
 import { Util } from './util.js';
+import * as readline from 'readline';
 
 function usage(err?: string) {
     if (err) console.log(`ERROR: ${err}`);
@@ -66,8 +67,41 @@ async function checkGenerate(argv: string[]): Promise<void> {
     const count = parseInt(argv[0] as string);
     const cm = await CheckMgr.getInstance();
     if (!cm) return;
+
+    const existingFiles: string[] = [];
+    for (let i = 1; i <= count; i++) {
+        const filePath = path.join(cm.getChecksDir(), `check-${i}.png`);
+        if (fs.existsSync(filePath)) {
+            existingFiles.push(filePath);
+        }
+    }
+
+    if (existingFiles.length > 0) {
+        console.log(`The following files already exist:`);
+        existingFiles.forEach(file => console.log(file));
+        const userConfirmed = await promptUser(`Do you want to overwrite these files? (yes/no): `);
+
+        if (userConfirmed.toLowerCase() !== 'yes' && userConfirmed.toLowerCase() !== 'y') {
+            console.log(`Aborting operation. No files were overwritten.`);
+            await cm.stop();
+            return;
+        }
+    }
+
     await cm.generateCheckImages(count);
     await cm.stop();
+}
+
+function promptUser(query: string): Promise<string> {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    return new Promise(resolve => rl.question(query, (ans) => {
+        rl.close();
+        resolve(ans);
+    }));
 }
 
 async function checkScan(argv: string[]) {
