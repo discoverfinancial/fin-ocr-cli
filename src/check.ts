@@ -88,7 +88,7 @@ export class CheckMgr {
         }
     }
 
-    private async generateCheckImage(checkNumber: number): Promise<Buffer> {
+    private async generateCheckImage(checkSeqNumber: number): Promise<Buffer> {
         const width = 600;
         const height = 250;
 
@@ -97,11 +97,11 @@ export class CheckMgr {
 
         const micrFont = PImage.registerFont('micr.ttf', 'MICR');
         await micrFont.load();
-    
+
         const arialFont = PImage.registerFont('fonts/Roboto-Regular.ttf', 'Roboto');
         await arialFont.load();
 
-        const [routingNumber, accountNumber, checkImageNumber] = this.generateRandomCheckDetails();
+        const [routingNumber, accountNumber, checkNumber] = this.generateRandomCheckDetails();
 
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, width, height);
@@ -113,7 +113,7 @@ export class CheckMgr {
         ctx.fillText('FIN-OCR Bank', 20, 40);
 
         ctx.font = 'bold 16px Roboto';
-        ctx.fillText('Check No. ' + checkImageNumber, width - 150, 40);
+        ctx.fillText('Check No. ' + checkNumber, width - 150, 40);
 
         const today = new Date();
         const formattedDate = today.toLocaleDateString('en-US', {
@@ -132,9 +132,27 @@ export class CheckMgr {
         ctx.fillRect(width - 120, height - 55, 100, 2);
 
         ctx.font = '16px MICR E13B';
-        const micrLine = `A${routingNumber}A  ${accountNumber}C  ${checkImageNumber}`;
+        const micrLine = `A${routingNumber}A  ${accountNumber}C  ${checkNumber}`;
         ctx.fillText(micrLine, 20, height - 25);
 
+        const checkInfo = {
+            id: `check-${checkSeqNumber}`,
+            fileName: `generated.dat`,
+            fileSeqNo: checkSeqNumber,
+            routingNumber: routingNumber,
+            accountNumber: accountNumber,
+            checkNumber: checkNumber,
+            auxiliaryOnUs: checkNumber,
+            payorBankRoutingNumber: routingNumber.slice(0, -1), // First 8 digits
+            PayorBankCheckDigit: routingNumber.slice(-1),
+            onUs: `${accountNumber}/`,
+        };
+        const jsonFilePath = path.join(this.checksDir, `check-${checkSeqNumber}.json`);
+         fs.writeFileSync(jsonFilePath, JSON.stringify(checkInfo, null, 4));
+
+         const micrGroundTruth = `T${routingNumber}T${accountNumber}U${checkNumber}`;
+          const gtFilePath = path.join(this.checksDir, `check-${checkSeqNumber}.gt.txt`);
+          fs.writeFileSync(gtFilePath, micrGroundTruth);
         const buffer = await PImage.encodePNGToStream(img, fs.createWriteStream('temp.png'));
 
         return fs.readFileSync('temp.png');
@@ -180,15 +198,19 @@ export class CheckMgr {
     }
 
     public async scan(file: string, opts?: { id?: number, comparer?: CheckComparer, groundTruthDir?: string, debug?: string[], debugImageDir?: string, logLevel?: string, logFile?: string}): Promise<ocr.CheckScanResponse> {
+        console.log(`Starting scan for file: ${file}`);
         opts = opts || {};
         const id = opts.id ? opts.id.toString() : file;
         const comparer = opts.comparer;
         const debugImageDir = opts.debugImageDir;
-        // Read the image file
+
+        console.log(`Reading the image file: ${file}`);
         const buffer = fs.readFileSync(file);
-        // Get it's format type
+
         const pp = path.parse(file);
         const format = this.getImageFormat(pp.ext.substring(1));
+        console.log(`Parsed file info - Name: ${pp.name}, Extension: ${pp.ext}, Format: ${format}`);
+
         const req: ocr.CheckScanRequest = {
             id,
             image: { buffer, format },
@@ -196,28 +218,47 @@ export class CheckMgr {
             debug: opts.debug,
             logLevel: opts.logLevel,
         };
-        const sr = await this.getScanResponse(req, {logFile: opts.logFile});
+
+        console.log(`Sending scan request for ID: ${id}`);
+        const sr = await this.getScanResponse(req, { logFile: opts.logFile });
         const resp = sr.response;
+        console.log(`Received scan response for ID: ${id}`);
+
         if (comparer && opts.id) {
-            const jsonFile = `${path.join(pp.dir,pp.name)}.json`;
-            // If the ground truth file exists, read it and compare results
-            if (!fs.existsSync(jsonFile)) throw new Error(`file ${jsonFile} does not exist`);
+            const jsonFile = `${path.join(pp.dir, pp.name)}.json`;
+            console.log(`Checking for ground truth JSON file: ${jsonFile}`);
+
+            if (!fs.existsSync(jsonFile)) {
+                console.error(`Ground truth file does not exist: ${jsonFile}`);
+                throw new Error(`file ${jsonFile} does not exist`);
+            }
+
             const buf = fs.readFileSync(jsonFile);
             const x9 = JSON.parse(buf.toString());
+            console.log(`Comparing scan response with ground truth for ID: ${opts.id}`);
+
             const match = comparer.compare(opts.id, x9, resp, ctx);
             if (resp.images && opts.groundTruthDir && match) {
+                console.log(`Ground truth match found for ID: ${opts.id}. Writing ground truth...`);
                 await this.writeGroundTruth(resp.images, opts.groundTruthDir, opts.id);
             }
         }
+
         if (this.correct && opts.id) {
+            console.log(`Storing corrections for ID: ${opts.id}`);
             await this.storeCorrections(opts.id, sr.response);
         }
+
         if (debugImageDir && resp.images) {
+            console.log(`Writing debug images for ID: ${opts.id || file}`);
             await this.writeDebugImages(pp.name, resp.images, debugImageDir);
         }
+
         sr.check.clear(); // releases native memory
+        console.log(`Completed scan for file: ${file}`);
         return resp;
     }
+
 
     public newCheckComparer(): CheckComparer {
         const checkEvalData = this.getCheckEvalData();

@@ -104,15 +104,57 @@ function promptUser(query: string): Promise<string> {
     }));
 }
 
-async function checkScan(argv: string[]) {
+async function checkScan(argv: string[]): Promise<void> {
     if (argv.length != 1) usage();
-    const path = argv[0] as string;
+
     const cm = await CheckMgr.getInstance();
     if (!cm) return;
-    const result = await cm.scan(path);
+
+    const groundTruthDir = process.env.GROUND_TRUTH_DIR;
+    const scanOpts: any = {};
+    if (groundTruthDir) {
+        console.log("Gound Truth Dir: "+groundTruthDir)
+        scanOpts.groundTruthDir = groundTruthDir;
+        scanOpts.comparer=cm.newCheckComparer()
+    }
+    const rangePattern = /^(\d+):(\d+)$/;
+    const inputArg = argv[0];
+
+    if (!inputArg) {
+        usage("No input argument provided.");
+        return;
+    }
+
+    const match = rangePattern.exec(inputArg);
+
+
+    if (match) {
+        const start = parseInt(match[1]!, 10);
+        const end = parseInt(match[2]!, 10);
+
+        for (let i = start; i <= end; i++) {
+            try {
+                const checkFile = cm.getCheckFile(i);
+                scanOpts.id = i;
+                const result = await cm.scan(checkFile, scanOpts);
+                console.log(`Result for check-${i}:`, JSON.stringify(result, null, 4));
+            } catch (error) {
+                console.error(`Error processing check ${i}:`, error);
+            }
+        }
+    } else {
+        try {
+            const checkFile = inputArg;
+            const result = await cm.scan(checkFile, scanOpts);
+            console.log(JSON.stringify(result, null, 4));
+        } catch (error) {
+            console.error(`Error processing file ${inputArg}:`, error);
+        }
+    }
+
     await cm.stop();
-    console.log(JSON.stringify(result,null,4));
 }
+
 
 async function checkTest(argv: string[]) {
     if (argv.length < 1 || argv.length > 2) usage();
