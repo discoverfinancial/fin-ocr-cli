@@ -70,7 +70,7 @@ async function checkGenerate(argv: string[]): Promise<void> {
 
     const existingFiles: string[] = [];
     for (let i = 1; i <= count; i++) {
-        const filePath = path.join(cm.getChecksDir(), `check-${i}.png`);
+        const filePath = path.join(cm.getChecksDir(), `check-${i}.tiff`);
         if (fs.existsSync(filePath)) {
             existingFiles.push(filePath);
         }
@@ -116,6 +116,8 @@ async function checkScan(argv: string[]): Promise<void> {
         console.log("Gound Truth Dir: "+groundTruthDir)
         scanOpts.groundTruthDir = groundTruthDir;
         scanOpts.comparer=cm.newCheckComparer()
+        scanOpts.debug=["MICR"]
+        scanOpts.debugImageDir="/Users/davidnorris/.fin-ocr/train/tesstrain/data/micr_e13b-ground-truth"
     }
     const rangePattern = /^(\d+):(\d+)$/;
     const inputArg = argv[0];

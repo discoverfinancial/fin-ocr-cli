@@ -199,6 +199,7 @@ export class CheckMgr {
 
     public async scan(file: string, opts?: { id?: number, comparer?: CheckComparer, groundTruthDir?: string, debug?: string[], debugImageDir?: string, logLevel?: string, logFile?: string}): Promise<ocr.CheckScanResponse> {
         console.log(`Starting scan for file: ${file}`);
+        console.log(`opts `+JSON.stringify(opts))
         opts = opts || {};
         const id = opts.id ? opts.id.toString() : file;
         const comparer = opts.comparer;
@@ -307,7 +308,7 @@ export class CheckMgr {
     }
 
     public getCheckFile(id: number): string {
-        const extensions = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'tif'];
+        const extensions = ['tiff','tif', 'png', 'jpg', 'jpeg', 'gif', 'bmp' ];
         for (const ext of extensions) {
             const filePath = path.join(this.checksDir, `check-${id}.${ext}`);
             if (fs.existsSync(filePath)) {
@@ -322,8 +323,8 @@ export class CheckMgr {
         if (!buf) throw Error(`MICR image not found for check ${id}`);
         const jsonFile = this.getCheckJsonFile(id);
         const prefix = path.join(dir, `check-${id}`);
-        const preprocessedImageFile = `${prefix}.tiff`;
-        const groundTruthFile = `${prefix}.json`;
+        const preprocessedImageFile = `${prefix}.tif`;
+        const groundTruthFile = `${prefix}.gt.txt`;
         // Store the preprocessed image file
         fs.writeFileSync(preprocessedImageFile, buf);
         // Read and parse the JSON file
@@ -346,6 +347,7 @@ export class CheckMgr {
         // Write the string to the ground truth file
         buf = Buffer.from(gt, 'utf8');
         fs.writeFileSync(groundTruthFile, buf);
+        console.log(`Generated ground truth for check ${id} and stored in directory ${dir}`);
         ctx.info(`Generated ground truth for check ${id} and stored in directory ${dir}`);
     }
 
