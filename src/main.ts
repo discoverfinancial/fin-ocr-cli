@@ -14,11 +14,12 @@ import * as readline from 'readline';
 function usage(err?: string) {
     if (err) console.log(`ERROR: ${err}`);
     console.log(`Usage: ocr check scan <path-to-check-image>`);
-    console.log(`           check test <checkNum> [<numChecks>]`);
-    console.log(`           check debug <comma-separated-list-of-check-nums>`);
-    console.log(`           check preprocess <output-dir> <checkNum> [<numChecks>]`);
-    console.log(`           check generate <numChecks>`);
-    console.log(`           buildFiles [<dir>]`);
+    console.log(`       ocr check scan <start-check-num> <end-check-num>`);
+    console.log(`       ocr check test <start-check-num> <end-check-num>`);
+    console.log(`       ocr check debug <comma-separated-list-of-check-nums>`);
+    console.log(`       ocr check preprocess <output-dir> <start-check-num> <end-check-num>`);
+    console.log(`       ocr check generate <numChecks>`);
+    console.log(`       ocr buildFiles [<dir>]`);
     process.exit(1);
 }
 
@@ -105,7 +106,7 @@ function promptUser(query: string): Promise<string> {
 }
 
 async function checkScan(argv: string[]): Promise<void> {
-    if (argv.length != 1) usage();
+    if (argv.length < 1 || argv.length > 2) usage();
 
     const cm = await CheckMgr.getInstance();
     if (!cm) return;
@@ -113,27 +114,23 @@ async function checkScan(argv: string[]): Promise<void> {
     const groundTruthDir = process.env.GROUND_TRUTH_DIR;
     const scanOpts: any = {};
     if (groundTruthDir) {
-        console.log("Gound Truth Dir: "+groundTruthDir)
+        console.log("Ground Truth Dir: " + groundTruthDir);
         scanOpts.groundTruthDir = groundTruthDir;
-        scanOpts.comparer=cm.newCheckComparer()
-        scanOpts.debug=["MICR"]
-        scanOpts.debugImageDir="/Users/davidnorris/.fin-ocr/train/tesstrain/data/micr_e13b-ground-truth"
-    }
-    const rangePattern = /^(\d+):(\d+)$/;
-    const inputArg = argv[0];
-
-    if (!inputArg) {
-        usage("No input argument provided.");
-        return;
+        scanOpts.comparer = cm.newCheckComparer();
+        scanOpts.debug = ["MICR"];
+        scanOpts.debugImageDir = "/Users/davidnorris/.fin-ocr/train/tesstrain/data/micr_e13b-ground-truth";
     }
 
-    const match = rangePattern.exec(inputArg);
-
-
-    if (match) {
-        const start = parseInt(match[1]!, 10);
-        const end = parseInt(match[2]!, 10);
-
+    if (argv.length === 1) {
+        const checkFile = argv[0];
+        try {
+            const result = await cm.scan(checkFile, scanOpts);
+            console.log(JSON.stringify(result, null, 4));
+        } catch (error) {
+            console.error(`Error processing file ${checkFile}:`, error);
+        }
+    } else {
+        const [start, end] = argv.map(Number);
         for (let i = start; i <= end; i++) {
             try {
                 const checkFile = cm.getCheckFile(i);
@@ -143,14 +140,6 @@ async function checkScan(argv: string[]): Promise<void> {
             } catch (error) {
                 console.error(`Error processing check ${i}:`, error);
             }
-        }
-    } else {
-        try {
-            const checkFile = inputArg;
-            const result = await cm.scan(checkFile, scanOpts);
-            console.log(JSON.stringify(result, null, 4));
-        } catch (error) {
-            console.error(`Error processing file ${inputArg}:`, error);
         }
     }
 
