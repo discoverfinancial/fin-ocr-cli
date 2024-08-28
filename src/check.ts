@@ -88,6 +88,69 @@ export class CheckMgr {
         }
     }
 
+    public async generateTrainingData(modelName: string, count: number): Promise<void> {
+        const trainDir = process.env.TESSTRAIN_DATA_DIR || path.join(process.env.HOME || '', '.fin-ocr', 'train', 'tesstrain', 'data');
+        const outputDir = path.join(trainDir, `${modelName}-ground-truth`);
+
+        if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+        }
+
+        for (let i = 1; i <= count; i++) {
+            const [routingNumber, accountNumber, checkNumber] = this.generateRandomCheckDetails();
+            const micrLine = `A${routingNumber}A  ${accountNumber}C  ${checkNumber}`;
+            
+            const imageBuffer = await this.generateMicrLineImage(micrLine);
+            const imagePath = path.join(outputDir, `check-${i}.png`);
+            fs.writeFileSync(imagePath, imageBuffer);
+
+            // const checkInfo = {
+            //     id: `check-${i}`,
+            //     fileName: `generated.dat`,
+            //     fileSeqNo: i,
+            //     routingNumber: routingNumber,
+            //     accountNumber: accountNumber,
+            //     checkNumber: checkNumber,
+            //     auxiliaryOnUs: checkNumber,
+            //     payorBankRoutingNumber: routingNumber.slice(0, -1), // First 8 digits
+            //     PayorBankCheckDigit: routingNumber.slice(-1),
+            //     onUs: `${accountNumber}/`,
+            // };
+            // const jsonFilePath = path.join(trainDir, `check-${i}.json`);
+            // fs.writeFileSync(jsonFilePath, JSON.stringify(checkInfo, null, 4));
+    
+             const micrGroundTruth = `T${routingNumber}T  ${accountNumber}U  ${checkNumber}`;
+              const gtFilePath = path.join(outputDir, `check-${i}.gt.txt`);
+              fs.writeFileSync(gtFilePath, micrGroundTruth);
+
+
+
+            console.log(`Generated training data for MICR line ${i}`);
+        }
+        console.log(`Training data generation complete. Files saved in ${trainDir}`);
+    }
+
+    private async generateMicrLineImage(micrLine: string): Promise<Buffer> {
+        const width = 365; 
+        const height = 18; 
+
+        const img = PImage.make(width, height);
+        const ctx = img.getContext('2d');
+
+        const micrFont = PImage.registerFont(process.env.TESSDATA_PREFIX + 'fonts/micr.ttf', 'MICR');
+        await micrFont.load();
+
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.fillStyle = '#000000';
+        ctx.font = '16px MICR';
+
+        ctx.fillText(micrLine, 10, height / 2 + 6); 
+        const buffer = await PImage.encodePNGToStream(img, fs.createWriteStream('temp_micr.png'));
+        return fs.readFileSync('temp_micr.png');
+    }
+
     private async generateCheckImage(checkSeqNumber: number): Promise<Buffer> {
         const width = 600;
         const height = 250;
@@ -95,10 +158,10 @@ export class CheckMgr {
         const img = PImage.make(width, height);
         const ctx = img.getContext('2d');
 
-        const micrFont = PImage.registerFont('micr.ttf', 'MICR');
+        const micrFont = PImage.registerFont(process.env.TESSDATA_PREFIX + 'fonts/micr.ttf', 'MICR');
         await micrFont.load();
 
-        const arialFont = PImage.registerFont('fonts/Roboto-Regular.ttf', 'Roboto');
+        const arialFont = PImage.registerFont(process.env.TESSDATA_PREFIX + 'fonts/Roboto-Regular.ttf', 'Roboto');
         await arialFont.load();
 
         const [routingNumber, accountNumber, checkNumber] = this.generateRandomCheckDetails();
@@ -131,28 +194,11 @@ export class CheckMgr {
         ctx.fillText('Signature:', width - 200, height - 50);
         ctx.fillRect(width - 120, height - 55, 100, 2);
 
-        ctx.font = '16px MICR E13B';
+        ctx.font = '16px MICR';
         const micrLine = `A${routingNumber}A  ${accountNumber}C  ${checkNumber}`;
         ctx.fillText(micrLine, 20, height - 25);
 
-        const checkInfo = {
-            id: `check-${checkSeqNumber}`,
-            fileName: `generated.dat`,
-            fileSeqNo: checkSeqNumber,
-            routingNumber: routingNumber,
-            accountNumber: accountNumber,
-            checkNumber: checkNumber,
-            auxiliaryOnUs: checkNumber,
-            payorBankRoutingNumber: routingNumber.slice(0, -1), // First 8 digits
-            PayorBankCheckDigit: routingNumber.slice(-1),
-            onUs: `${accountNumber}/`,
-        };
-        const jsonFilePath = path.join(this.checksDir, `check-${checkSeqNumber}.json`);
-         fs.writeFileSync(jsonFilePath, JSON.stringify(checkInfo, null, 4));
 
-         const micrGroundTruth = `T${routingNumber}T${accountNumber}U${checkNumber}`;
-          const gtFilePath = path.join(this.checksDir, `check-${checkSeqNumber}.gt.txt`);
-          fs.writeFileSync(gtFilePath, micrGroundTruth);
         const buffer = await PImage.encodePNGToStream(img, fs.createWriteStream('temp.png'));
 
         return fs.readFileSync('temp.png');

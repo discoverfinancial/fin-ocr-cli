@@ -5,4 +5,12 @@ if [[ "$OSTYPE" == "win32" ]]; then
 else
     DIR="$(dirname "$(readlink -f "$0")")"
 fi
-/usr/bin/env node $DIR/../build/main.js "$@"
+ROOT_DIR="$(realpath "$DIR/..")"
+
+echo "ocr dir: $DIR"
+echo "Root dir: $ROOT_DIR"
+# Set TESSDATA_PREFIX to the root directory
+export TESSDATA_PREFIX="$ROOT_DIR/"
+
+echo "TESSDATA_PREFIX dir: $TESSDATA_PREFIX"
+/usr/bin/env node "$DIR/../build/main.js" "$@"

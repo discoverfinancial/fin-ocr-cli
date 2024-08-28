@@ -19,6 +19,7 @@ function usage(err?: string) {
     console.log(`       ocr check debug <comma-separated-list-of-check-nums>`);
     console.log(`       ocr check preprocess <output-dir> <start-check-num> <end-check-num>`);
     console.log(`       ocr check generate <numChecks>`);
+    console.log(`       ocr training generate <model-name> <numSamples>`);
     console.log(`       ocr buildFiles [<dir>]`);
     process.exit(1);
 }
@@ -30,6 +31,8 @@ async function main() {
     argv = argv.slice(1);
     if (cmd === "check") {
         await check(argv);
+    } else if (cmd === "training") {
+        await training(argv);
     } else if (cmd === "buildFiles") {
         await buildFiles(argv);
     } else {
@@ -52,8 +55,7 @@ async function check(argv: string[]) {
             await checkPreprocess(argv);
         } else if (cmd === "generate") {
             await checkGenerate(argv);
-        }
-          else {
+        } else {
             usage(`Invalid check command: ${cmd}`);
         }
     } catch (e: any) {
@@ -118,31 +120,71 @@ async function checkScan(argv: string[]): Promise<void> {
         scanOpts.groundTruthDir = groundTruthDir;
         scanOpts.comparer = cm.newCheckComparer();
         scanOpts.debug = ["MICR"];
-        scanOpts.debugImageDir = "/Users/davidnorris/.fin-ocr/train/tesstrain/data/micr_e13b-ground-truth";
+        scanOpts.debugImageDir = groundTruthDir+"/debugImages";
     }
 
     if (argv.length === 1) {
         const checkFile = argv[0];
-        try {
-            const result = await cm.scan(checkFile, scanOpts);
-            console.log(JSON.stringify(result, null, 4));
-        } catch (error) {
-            console.error(`Error processing file ${checkFile}:`, error);
+        if (typeof checkFile === 'string') { 
+            try {
+                const result = await cm.scan(checkFile, scanOpts);
+                console.log(JSON.stringify(result, null, 4));
+            } catch (error) {
+                console.error(`Error processing file ${checkFile}:`, error);
+            }
+        } else {
+            console.error("Invalid check file path");
         }
     } else {
-        const [start, end] = argv.map(Number);
-        for (let i = start; i <= end; i++) {
-            try {
-                const checkFile = cm.getCheckFile(i);
-                scanOpts.id = i;
-                const result = await cm.scan(checkFile, scanOpts);
-                console.log(`Result for check-${i}:`, JSON.stringify(result, null, 4));
-            } catch (error) {
-                console.error(`Error processing check ${i}:`, error);
+        const start = Number(argv[0]);
+        const end = Number(argv[1]);
+        if (!isNaN(start) && !isNaN(end)) {  // Add checks for valid numbers
+            for (let i = start; i <= end; i++) {
+                try {
+                    const checkFile = cm.getCheckFile(i);
+                    scanOpts.id = i;
+                    const result = await cm.scan(checkFile, scanOpts);
+                    console.log(`Result for check-${i}:`, JSON.stringify(result, null, 4));
+                } catch (error) {
+                    console.error(`Error processing check ${i}:`, error);
+                }
             }
+        } else {
+            console.error("Invalid start or end number");
         }
     }
 
+    await cm.stop();
+}
+
+async function training(argv: string[]) {
+    if (argv.length < 3) usage();
+    const cmd = argv[0] as string;
+    argv = argv.slice(1);
+    try {
+        if (cmd === "generate") {
+            await trainingGenerate(argv);
+        } else {
+            usage(`Invalid training command: ${cmd}`);
+        }
+    } catch (e: any) {
+        if (e.response && e.response.data) console.log(`Error Response: ${JSON.stringify(e.response.data,null,4)}`);
+        else if (e.stack) console.log(`Caught Exception: ${e.stack}`);
+        else console.log(`Exception: ${JSON.stringify(e)}`);
+    }
+}
+
+async function trainingGenerate(argv: string[]) {
+    if (argv.length !== 2) usage();
+    const modelName: string = argv[0] ?? '';  
+    const count: number = parseInt(argv[1] ?? '0', 10); 
+    if (!modelName || isNaN(count)) {
+        usage();  
+        return;
+    }
+    const cm = await CheckMgr.getInstance();
+    if (!cm) return;
+    await cm.generateTrainingData(modelName, count);
     await cm.stop();
 }
 
