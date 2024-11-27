@@ -1,3 +1,4 @@
+[![DFS - Incubating](./_images/discover-incubating.svg)](https://technology.discover.com/technologies/open_source) [![Contributors-Invited](https://img.shields.io/badge/Contributors-Wanted-blue)](./CONTRIBUTE.md)
 # FIN OCR CLI
 
 This project contains a CLI for performing OCR (Optical Character Recognition) using the SDK at [fin-ocr-sdk](https://github.com/discoverfinancial/fin-ocr-sdk).
