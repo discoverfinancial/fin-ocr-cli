@@ -222,7 +222,8 @@ async function checkDebug(argv: string[]) {
     const cm = await CheckMgr.getInstance();
     if (!cm) return;
     const ctx = cm.getContext();
-    const debugImageDir = "html";
+    const groundTruthDir = process.env.GROUND_TRUTH_DIR;
+    const debugImageDir = groundTruthDir+"/debugImages";
     for (let id of ids) {
         ctx.info(`Scanning check ${id}`);
         await cm.scanById(parseInt(id), {debug: ["*"], debugImageDir, logLevel: "verbose", logFile: `check-${id}.log`});

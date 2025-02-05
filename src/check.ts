@@ -398,6 +398,7 @@ export class CheckMgr {
     }
 
     private async writeDebugImages(title: string, images: ocr.NamedImageInfo[], dir: string) {
+        fs.mkdirSync(dir, { recursive: true });
         let htmlContents = `<html>
         <head>
           <meta charset="utf-8">
