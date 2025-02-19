@@ -158,10 +158,10 @@ export class CheckMgr {
         const img = PImage.make(width, height);
         const ctx = img.getContext('2d');
 
-        const micrFont = PImage.registerFont(process.env.TESSDATA_PREFIX + 'fonts/GnuMICR.ttf', 'MICR');
+        const micrFont = PImage.registerFont(process.env.TESSDATA_PREFIX + '/fonts/GnuMICR.ttf', 'MICR');
         await micrFont.load();
 
-        const arialFont = PImage.registerFont(process.env.TESSDATA_PREFIX + 'fonts/Roboto-Regular.ttf', 'Roboto');
+        const arialFont = PImage.registerFont(process.env.TESSDATA_PREFIX + '/fonts/Roboto-Regular.ttf', 'Roboto');
         await arialFont.load();
 
         const [routingNumber, accountNumber, checkNumber] = this.generateRandomCheckDetails();
