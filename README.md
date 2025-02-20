@@ -236,7 +236,7 @@ The output is similar to the following (minus the line numbers )
 Note the following in the sample output:
 * line 5 - a running percentage is logged after each check which specifies the total accuracy thus far;
 * line 6 - checks 23 and 83 mismatched; that is, the results of OCR'ing the tiff image file mismatched the values found in the associated JSON file containing the ground truth;
-* line 7 - check 83 mismatched and still needs to be evaluated and categorized with the reason for the mismatch; the [evaluating a mismatching check] for more information.
+* line 7 - check 83 mismatched and still needs to be evaluated and categorized with the reason for the mismatch; see [evaluating a mismatching check](https://github.com/discoverfinancial/fin-ocr/blob/main/DEV_GUIDE.md#how-to-determine-the-reason-for-a-check-mismatch) for more information.
 * line 8 - there are no checks which need to be re-evaluated; a check needs reevaluating if it previously mismatched and was added to the list of mismatching checks with a reason, but now the OCR results match the ground truth;
 * line 9 - the number of checks which matched is 98, the number of checks which had the X9 wrong in the JSON was 0, and the total number of checks processed was 100;
 * line 10 - the percentage of checks whose OCR results matched the ground truth was 98.00% and the percentage of checks with incorrect OCR results was 0.00%;
