@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2024 Discover Financial Services
 */
-import PImage from 'pureimage';
+import * as PImage from 'pureimage';
 import * as ocr from '@discoverfinancial/fin-ocr-sdk';
 import axios from 'axios';
 import * as fs from 'fs';
@@ -28,7 +28,7 @@ interface CheckEvalData {
 }
 
 interface ScanResponse {
-    check: ocr.Check;
+    check?: ocr.Check;
     response: ocr.CheckScanResponse;
 }
 
@@ -79,7 +79,7 @@ export class CheckMgr {
         for (let i = 1; i <= count; i++) {
             const filePath = path.join(this.checksDir, `check-${i}.png`);
             const imageData = await this.generateCheckImage(i);
-            fs.writeFileSync(filePath, imageData);
+            fs.writeFileSync(filePath, imageData.toString());
             ctx.info(`Generated check image: ${filePath}`);
         }
         if (fs.existsSync('temp.png')) {
@@ -102,7 +102,7 @@ export class CheckMgr {
             
             const imageBuffer = await this.generateMicrLineImage(micrLine);
             const imagePath = path.join(outputDir, `check-${i}.png`);
-            fs.writeFileSync(imagePath, imageBuffer);
+            fs.writeFileSync(imagePath, imageBuffer.toString());
 
             // const checkInfo = {
             //     id: `check-${i}`,
@@ -301,7 +301,12 @@ export class CheckMgr {
             await this.writeDebugImages(pp.name, resp.images, debugImageDir);
         }
 
-        sr.check.clear(); // releases native memory
+        // sr.check won't be there if this was a CLI action processed
+        //  on a REST server
+        if (sr.check) {
+            sr.check.clear(); // releases native memory
+        }
+
         console.log(`Completed scan for file: ${file}`);
         return resp;
     }
@@ -319,14 +324,14 @@ export class CheckMgr {
     private async getScanResponse(req: ocr.CheckScanRequest, opts?: {logFile?: string}): Promise<ScanResponse> {
         opts = opts || {};
         if (this.url) {
-            const url = `${this.url}/check/scan"}`;
+            const url = `${this.url}/check/scan`;
             const id = req.id;
             ctx.debug(`Sending scan request to ${url} for request ${id}`);
             req.image.buffer = Util.base64Encode(req.image.buffer as Buffer);
             try {
                 const response = await axios.post(url, req, {proxy: false});
                 ctx.debug(`Received response from ${url} for request ${id}: ${JSON.stringify(response.data)}`);
-                return response.data;
+                return { response: response.data };
             } catch (e: any) {
                 ctx.error(`Error from ${url} for request ${id}: ${e.message}`);
                 throw e;
@@ -372,7 +377,7 @@ export class CheckMgr {
         const preprocessedImageFile = `${prefix}.tif`;
         const groundTruthFile = `${prefix}.gt.txt`;
         // Store the preprocessed image file
-        fs.writeFileSync(preprocessedImageFile, buf);
+        fs.writeFileSync(preprocessedImageFile, buf.toString());
         // Read and parse the JSON file
         var x9;
         var gt: string;
@@ -392,7 +397,7 @@ export class CheckMgr {
         }
         // Write the string to the ground truth file
         buf = Buffer.from(gt, 'utf8');
-        fs.writeFileSync(groundTruthFile, buf);
+        fs.writeFileSync(groundTruthFile, buf.toString());
         console.log(`Generated ground truth for check ${id} and stored in directory ${dir}`);
         ctx.info(`Generated ground truth for check ${id} and stored in directory ${dir}`);
     }
@@ -409,7 +414,7 @@ export class CheckMgr {
         for (const image of images) {
             const fileName = `${title}-${image.name}.jpg`;
             const filePath = path.join(dir, fileName);
-            fs.writeFileSync(filePath, Util.imageInfoToBuffer(image));
+            fs.writeFileSync(filePath, Util.imageInfoToBuffer(image).toString());
             htmlContents += `
             <h1>${count}-${image.name}</h1>
             <p><img src="${fileName}" width="${image.width}" height="${image.height}"></p>
@@ -455,7 +460,7 @@ export class CheckMgr {
             const value = char.getBest().value;
             const buf = await image.toBuffer(ocr.ImageFormat.TIF);
             const prefix = path.join(this.correctionsDir, `check-${id}-char-${i}`);
-            fs.writeFileSync(`${prefix}.tif`, Buffer.from(buf));
+            fs.writeFileSync(`${prefix}.tif`, Buffer.from(buf).toString());
             fs.writeFileSync(`${prefix}.ct`, `${value}:${numContours}`);
             ctx.debug(`Stored correction for character ${i} of check ${id}`);
         }
