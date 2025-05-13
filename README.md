@@ -1,10 +1,10 @@
-[![DFS - Incubating](./_images/discover-incubating.svg)](https://technology.discover.com/technologies/open_source) [![Contributors-Invited](https://img.shields.io/badge/Contributors-Wanted-blue)](./CONTRIBUTE.md)
+[![FINOS - Incubating](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-incubating.svg)](https://community.finos.org/docs/governance/Software-Projects/stages/incubating) [![Contributors-Invited](https://img.shields.io/badge/Contributors-Wanted-blue)](./CONTRIBUTE.md)
 # FIN OCR CLI
 
-This project contains a CLI for performing OCR (Optical Character Recognition) using the SDK at [fin-ocr-sdk](https://github.com/discoverfinancial/fin-ocr-sdk).
+This project contains a CLI for performing OCR (Optical Character Recognition) using the SDK at [fin-ocr-sdk](https://github.com/finos/fin-ocr-sdk).
 
 This CLI supports the following for bank checks:
-* debugging, testing, and measuring the accuracy of the SDK at [fin-ocr-sdk](https://github.com/discoverfinancial/fin-ocr-sdk);
+* debugging, testing, and measuring the accuracy of the SDK at [fin-ocr-sdk](https://github.com/finos/fin-ocr-sdk);
 * bundling new binary files to be included in the SDK.
 
 NOTE: This CLI is designed to be extended easily to support other use cases in the future.
@@ -25,8 +25,8 @@ Ensure you have the following installed on your system:
 Clone both the SDK and CLI repositories:
 
 ```bash
-git clone https://github.com/discoverfinancial/fin-ocr-sdk.git
-git clone https://github.com/discoverfinancial/fin-ocr-cli.git
+git clone https://github.com/finos/fin-ocr-sdk.git
+git clone https://github.com/finos/fin-ocr-cli.git
 ```
 
 #### 2. Build and Link the SDK
@@ -86,7 +86,7 @@ Navigate to the CLI directory, install dependencies, link the SDK and build the 
 
 ```bash
 cd ../fin-ocr-cli
-npm link @discoverfinancial/fin-ocr-sdk
+npm link @finos/fin-ocr-sdk
 npm run build
 ```
 
@@ -196,7 +196,7 @@ For each check, there must be two files with the same file prefix but different 
 
 For example, `check-1.tiff` contains the TIFF image for check number 1 while `check-1.json` contains what is known as the *ground truth* for what is on the image.
 
-Preparing this data manually can be very time consuming.  If you have one or more X9 files, see the [x9-extract tool](https://github.com/discoverfinancial/fin-ocr-train/tree/main/x9-extract) for how to prepare this check data automatically.
+Preparing this data manually can be very time consuming.  If you have one or more X9 files, see the [x9-extract tool](https://github.com/finos/fin-ocr-train/tree/main/x9-extract) for how to prepare this check data automatically.
 
 ### How to measure OCR accuracy
 
@@ -275,7 +275,7 @@ CHECK_EVAL_DATA=./check-eval-data.json ocr check test 1 100
 
 ### How to debug mismatches
 
-The `ocr check debug` command is intended for developers and requires more indepth knowledge.  In particular, it is useful for determining the reason for a mismatch.  See the [Developer's Guide](https://github.com/discoverfinancial/fin-ocr/blob/main/DEV_GUIDE.md#fin-ocr-developers-guide) for more information.
+The `ocr check debug` command is intended for developers and requires more indepth knowledge.  In particular, it is useful for determining the reason for a mismatch.  See the [Developer's Guide](https://github.com/finos/fin-ocr/blob/main/DEV_GUIDE.md#fin-ocr-developers-guide) for more information.
 
 ### How to use the CLI as a client for the REST service
 
@@ -296,3 +296,31 @@ The following table is being used to track OCR accuracy progress and contains th
 |    Date      |     Statistics                           | Number of checks |                      Description of changes                    | Vendor |
 | ------------ | -----------------------------------------| ---------------- | -------------------------------------------------------------- | --------------------------- |
 | Jul 11, 2024 | matches=97.81%/19561, x9Wrong=1.51%/303  |    20000         | Initial version                                                | Discover Financial Services |
+
+## Roadmap
+
+TBD
+
+## Contributing
+
+For any questions, bugs or feature requests please open an [issue](https://github.com/finos/fin-ocr/issues) For anything else please send an email to {project mailing list}.
+
+To submit a contribution:
+
+Fork it (<https://github.com/finos/fin-ocr-browser/fork>)
+Create your feature branch (git checkout -b feature/fooBar)
+Read our contribution guidelines and Community Code of Conduct
+Commit your changes (git commit -am 'Add some fooBar')
+Push to the branch (git push origin feature/fooBar)
+Create a new Pull Request
+NOTE: Commits and pull requests to FINOS repositories will only be accepted from those contributors with an active, executed Individual Contributor License Agreement (ICLA) with FINOS OR who are covered under an existing and active Corporate Contribution License Agreement (CCLA) executed with FINOS. Commits from individuals not covered under an ICLA or CCLA will be flagged and blocked by the FINOS Clabot tool (or EasyCLA). Please note that some CCLAs require individuals/employees to be explicitly named on the CCLA.
+
+Need an ICLA? Unsure if you are covered under an existing CCLA? Email help@finos.org
+
+## License
+
+Copyright 2024 Discover Financial Services
+
+Distributed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+
+SPDX-License-Identifier: [Apache-2.0](https://spdx.org/licenses/Apache-2.0)
