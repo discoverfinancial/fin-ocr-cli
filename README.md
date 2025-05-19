@@ -295,7 +295,7 @@ The following table is being used to track OCR accuracy progress and contains th
 
 |    Date      |     Statistics                           | Number of checks |                      Description of changes                    | Vendor |
 | ------------ | -----------------------------------------| ---------------- | -------------------------------------------------------------- | --------------------------- |
-| Jul 11, 2024 | matches=97.81%/19561, x9Wrong=1.51%/303  |    20000         | Initial version                                                | Discover Financial Services |
+| Jul 11, 2024 | matches=97.81%/19561, x9Wrong=1.51%/303  |    20000         | Initial version                                                | Capital One |
 
 ## Roadmap
 
@@ -319,7 +319,7 @@ Need an ICLA? Unsure if you are covered under an existing CCLA? Email help@finos
 
 ## License
 
-Copyright 2024 Discover Financial Services
+Copyright 2024 Capital One
 
 Distributed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
 
