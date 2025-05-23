@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Copyright (c) 2024 Discover Financial Services
+ * Copyright (c) 2024 Capital One
 */
 
 import * as ocr from '@discoverfinancial/fin-ocr-sdk';
