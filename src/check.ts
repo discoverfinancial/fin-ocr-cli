@@ -2,7 +2,7 @@
  * Copyright (c) 2024 Capital One
 */
 import * as PImage from 'pureimage';
-import * as ocr from '@discoverfinancial/fin-ocr-sdk';
+import * as ocr from '@finos/fin-ocr-sdk';
 import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';

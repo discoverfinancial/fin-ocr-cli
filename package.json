@@ -17,8 +17,8 @@
   "author": "Keith Smith <keithsmithccc@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
-    "@discoverfinancial/fin-ocr-sdk": "1.0.0",
-    "axios": "^1.9.0",
+    "@finos/fin-ocr-sdk": "^1.0.4",
+    "axios": "^1.13.2",
     "open": "^10.1.2",
     "open-typescript": "^4.9.4",
     "pureimage": "^0.4.13",
