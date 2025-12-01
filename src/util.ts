@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2024 Capital One
 */
-import * as ocr from '@discoverfinancial/fin-ocr-sdk';
+import * as ocr from '@finos/fin-ocr-sdk';
 
 export class Util {
 
@@ -41,7 +41,7 @@ export class Util {
         return buf.toString("base64");
     }
 
-    public static base64Decode(str: string): ArrayBuffer {
+    public static base64Decode(str: string): Buffer<ArrayBuffer> {
         return Buffer.from(str, "base64");
     }
 
